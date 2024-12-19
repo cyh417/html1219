@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星際飛碟射擊遊戲</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: black;
+        }
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+        }
+        #hud span {
+            margin-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <button id="startButton">開始遊戲</button>
+    <div id="hud">
+        <span id="score">分數：0</span>
+        <span id="lives">生命值：★★★★★</span>
+    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+
+        let gameInterval;
+        let score = 0;
+        let lives = 5;
+        let spaceship = { x: 400, y: 500, width: 40, height: 60 };
+        let bullets = [];
+        let enemies = [];
+        let meteors = [];
+        let gameSpeed = 2;
+        let isGameRunning = false;
+
+        // Key states
+        const keys = {};
+
+        function drawSpaceship() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(spaceship.x, spaceship.y, spaceship.width, spaceship.height);
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = 'yellow';
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, 5, 10);
+                bullet.y -= 10;
+            });
+            bullets = bullets.filter(bullet => bullet.y > 0);
+        }
+
+        function drawEnemies() {
+            ctx.fillStyle = 'green';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, 30, 30);
+                enemy.y += gameSpeed;
+            });
+            enemies = enemies.filter(enemy => enemy.y < canvas.height);
+        }
+
+        function drawMeteors() {
+            ctx.fillStyle = 'gray';
+            meteors.forEach(meteor => {
+                ctx.beginPath();
+                ctx.arc(meteor.x, meteor.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+                meteor.y += gameSpeed + 1;
+            });
+            meteors = meteors.filter(meteor => meteor.y < canvas.height);
+        }
+
+        function detectCollisions() {
+            bullets.forEach((bullet, bulletIndex) => {
+                enemies.forEach((enemy, enemyIndex) => {
+                    if (
+                        bullet.x < enemy.x + 30 &&
+                        bullet.x + 5 > enemy.x &&
+                        bullet.y < enemy.y + 30 &&
+                        bullet.y + 10 > enemy.y
+                    ) {
+                        score += 10;
+                        scoreElement.textContent = `分數：${score}`;
+                        bullets.splice(bulletIndex, 1);
+                        enemies.splice(enemyIndex, 1);
+                    }
+                });
+            });
+
+            meteors.forEach((meteor, meteorIndex) => {
+                if (
+                    spaceship.x < meteor.x + 20 &&
+                    spaceship.x + spaceship.width > meteor.x &&
+                    spaceship.y < meteor.y + 20 &&
+                    spaceship.y + spaceship.height > meteor.y
+                ) {
+                    lives -= 1;
+                    updateLives();
+                    meteors.splice(meteorIndex, 1);
+                }
+            });
+        }
+
+        function updateLives() {
+            livesElement.textContent = `生命值：${'★'.repeat(lives)}${'☆'.repeat(5 - lives)}`;
+            if (lives <= 0) {
+                endGame();
+            }
+        }
+
+        function spawnEnemies() {
+            if (Math.random() < 0.03) {
+                enemies.push({ x: Math.random() * (canvas.width - 30), y: 0 });
+            }
+        }
+
+        function spawnMeteors() {
+            if (Math.random() < 0.02) {
+                meteors.push({ x: Math.random() * canvas.width, y: 0 });
+            }
+        }
+
+        function handleInput() {
+            if (keys['ArrowLeft'] && spaceship.x > 0) spaceship.x -= 5;
+            if (keys['ArrowRight'] && spaceship.x < canvas.width - spaceship.width) spaceship.x += 5;
+            if (keys[' '] && bullets.length < 5) {
+                bullets.push({ x: spaceship.x + spaceship.width / 2 - 2.5, y: spaceship.y });
+            }
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            handleInput();
+            drawSpaceship();
+            drawBullets();
+            drawEnemies();
+            drawMeteors();
+            detectCollisions();
+            spawnEnemies();
+            spawnMeteors();
+
+            // Speed up the game over time
+            if (score % 50 === 0 && score !== 0) {
+                gameSpeed += 0.1;
+            }
+        }
+
+        function startGame() {
+            isGameRunning = true;
+            score = 0;
+            lives = 5;
+            bullets = [];
+            enemies = [];
+            meteors = [];
+            gameSpeed = 2;
+            updateLives();
+            scoreElement.textContent = `分數：${score}`;
+            startButton.style.display = 'none';
+
+            gameInterval = setInterval(updateGame, 1000 / 60);
+        }
+
+        function endGame() {
+            isGameRunning = false;
+            clearInterval(gameInterval);
+            alert(`遊戲結束！您的分數是：${score}`);
+            startButton.style.display = 'block';
+        }
+
+        startButton.addEventListener('click', startGame);
+        window.addEventListener('keydown', e => (keys[e.key] = true));
+        window.addEventListener('keyup', e => (keys[e.key] = false));
+    </script>
+</body>
+</html>

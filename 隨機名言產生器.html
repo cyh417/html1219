@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隨機名言生成器</title>
+</head>
+<body>
+    <h1>隨機名言生成器</h1>
+    <p id="quoteDisplay">按下下面的按鈕來顯示名言。</p>
+    <button onclick="generateQuote()">顯示名言</button>
+
+    <script>
+        const quotes = [
+            "生活不是等待暴風雨過去，而是學會在雨中跳舞。",
+            "成功是學會從失敗中站起來。",
+            "無論多麼艱難的開始，只要堅持，結局必定光明。",
+            "不在乎你做了多少，而在乎你做的是否對。",
+            "不經一事，不長一智。",
+            "做一個快樂的人，為別人帶來快樂。",
+            "生活就像騎單車，為了保持平衡，你必須繼續前進。"
+        ];
+
+        function generateQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            document.getElementById('quoteDisplay').textContent = quotes[randomIndex];
+        }
+    </script>
+</body>
+</html>
